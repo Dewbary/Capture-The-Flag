@@ -17,7 +17,7 @@ type Player = {
 const app = express();
 const server = http.createServer(app);
 
-const buildPath = path.join(__dirname, "../client/dist");
+const buildPath = "../client/dist";
 app.use(express.static(buildPath));
 
 app.get("*", function (req: any, res: any) {
