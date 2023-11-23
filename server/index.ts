@@ -17,19 +17,15 @@ type Player = {
 const app = express();
 const server = http.createServer(app);
 
-const dirname = path.dirname("");
-const buildPath = path.join(dirname, "../client/dist");
+const buildPath = path.join(__dirname, "../client/dist");
 app.use(express.static(buildPath));
 
 app.get("*", function (req: any, res: any) {
-  res.sendFile(
-    path.join(dirname, "../client/dist/index.html"),
-    function (err: any) {
-      if (err) {
-        res.status(500).send(err);
-      }
+  res.sendFile(path.join(buildPath, "index.html"), function (err: any) {
+    if (err) {
+      res.status(500).send(err);
     }
-  );
+  });
 });
 
 const io = new Server(server, {
