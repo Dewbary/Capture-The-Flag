@@ -1,4 +1,3 @@
-import * as React from "react";
 import { PlayerInfo } from "../types";
 
 type Props = {
