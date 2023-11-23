@@ -18,12 +18,12 @@ const app = express();
 const server = http.createServer(app);
 
 const dirname = path.dirname("");
-const buildPath = path.join(dirname, "../client/dist/build");
+const buildPath = path.join(dirname, "../client/dist");
 app.use(express.static(buildPath));
 
 app.get("*", function (req: any, res: any) {
   res.sendFile(
-    path.join(dirname, "../client/build/dist/index.html"),
+    path.join(dirname, "../client/dist/index.html"),
     function (err: any) {
       if (err) {
         res.status(500).send(err);
