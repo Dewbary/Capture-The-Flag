@@ -17,13 +17,13 @@ type Player = {
 const app = express();
 const server = http.createServer(app);
 
-const _dirname = path.dirname("");
-const buildPath = path.join(_dirname, "../client/build");
+const dirname = path.dirname("");
+const buildPath = path.join(dirname, "../client/dist/build");
 app.use(express.static(buildPath));
 
 app.get("/*", function (req: any, res: any) {
   res.sendFile(
-    path.join(__dirname, "../client/build/index.html"),
+    path.join(dirname, "../client/build/dist/index.html"),
     function (err: any) {
       if (err) {
         res.status(500).send(err);
