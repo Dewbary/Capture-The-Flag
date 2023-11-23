@@ -1,5 +1,7 @@
 const express = require("express");
 const http = require("http");
+const path = require("path");
+
 import { Server } from "socket.io";
 
 type Position = {
@@ -14,6 +16,21 @@ type Player = {
 
 const app = express();
 const server = http.createServer(app);
+
+const _dirname = path.dirname("");
+const buildPath = path.join(_dirname, "../client/build");
+app.use(express.static(buildPath));
+
+app.get("/*", function (req: any, res: any) {
+  res.sendFile(
+    path.join(__dirname, "../client/build/index.html"),
+    function (err: any) {
+      if (err) {
+        res.status(500).send(err);
+      }
+    }
+  );
+});
 
 const io = new Server(server, {
   cors: {
@@ -44,6 +61,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3001, () => {
-  console.log("✅ Server listening on port 3001");
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log("✅ Server listening on port " + PORT);
 });
