@@ -4,7 +4,7 @@ import { Player } from "./Player";
 import { PlayerInfo } from "../types";
 
 const socket = io(
-  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com:3001"
+  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
 );
 const moveSpeed = 50;
 
