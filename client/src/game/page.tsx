@@ -3,7 +3,9 @@ import { io } from "socket.io-client";
 import { Player } from "./Player";
 import { PlayerInfo } from "../types";
 
-const socket = io("http://localhost:3001");
+const socket = io(
+  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com:3001"
+);
 const moveSpeed = 50;
 
 const Game = () => {
