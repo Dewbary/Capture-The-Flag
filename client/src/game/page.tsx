@@ -12,7 +12,7 @@ const socket = io(
   // Prod
   "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
 
-  // Dev env
+  // Dev
   // "http://localhost:3001"
 );
 const moveSpeed = 50;
