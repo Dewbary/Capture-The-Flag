@@ -10,10 +10,10 @@ import { produce } from "immer";
 
 const socket = io(
   // Prod
-  // "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
+  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com",
 
   // Dev env
-  "http://localhost:3001",
+  // "http://localhost:3001",
   {
     autoConnect: false,
   }
@@ -25,6 +25,7 @@ const Game = () => {
     id: socket.id,
     position: { x: 100, y: 100 },
   });
+
   const [playersList, setPlayersList] = useState<PlayerInfo[]>([]);
   const [joinedGame, setJoinedGame] = useState(false);
   const [flags, setFlags] = useState<Flag[]>([
