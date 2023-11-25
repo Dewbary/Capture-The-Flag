@@ -103,17 +103,23 @@ const Game = () => {
       setPlayersList(players);
     };
 
+    const handleLeaveGame = (players: PlayerInfo[]) => {
+      setPlayersList(players);
+    };
+
     window.addEventListener("keydown", handleKeyPress);
     socket.on("player-moved", handlePlayerMoved);
     socket.on("join-game", handleJoinGameSuccess);
     socket.on("flag-captured", handleFlagCaptured);
+    socket.on("leave-game", handleLeaveGame);
 
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
       socket.off("player-moved", handlePlayerMoved);
       socket.off("join-game", handleJoinGameSuccess);
+      socket.emit("leave-game", clientPlayerState);
     };
-  }, [handleKeyPress, playersList, flags]);
+  }, [handleKeyPress, playersList, flags, clientPlayerState]);
 
   useEffect(() => {
     if (!joinedGame) return;

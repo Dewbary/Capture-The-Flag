@@ -54,6 +54,11 @@ io.on("connection", (socket) => {
     io.emit("join-game", players);
   });
 
+  socket.on("leave-game", (player: Player) => {
+    players = players.filter((p) => p.id !== player.id);
+    socket.broadcast.emit("leave-game", players);
+  });
+
   socket.on("player-moved", (player: Player) => {
     players = players.map((p) => {
       if (p.id === player.id) {
