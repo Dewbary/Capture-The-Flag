@@ -51,7 +51,7 @@ io.on("connection", (socket) => {
     if (!players.find((p) => p.id === player.id)) {
       players.push(player);
     }
-    io.emit("join-game", players);
+    io.emit("join-game", players, flags);
   });
 
   socket.on("disconnect", () => {
