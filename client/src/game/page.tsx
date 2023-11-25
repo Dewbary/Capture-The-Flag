@@ -29,11 +29,13 @@ const Game = () => {
       teamId: "red",
       position: { x: 800, y: 50 },
       color: "#eb4034",
+      captured: false,
     },
     {
       teamId: "blue",
       position: { x: 800, y: 750 },
       color: "#3489eb",
+      captured: false,
     },
   ]);
 
@@ -96,7 +98,8 @@ const Game = () => {
       setPlayersList(players);
     };
 
-    const handleFlagCaptured = (players: PlayerInfo[]) => {
+    const handleFlagCaptured = (players: PlayerInfo[], flags: Flag[]) => {
+      setFlags(flags);
       setPlayersList(players);
     };
 
@@ -130,18 +133,28 @@ const Game = () => {
 
   useEffect(() => {
     flags.forEach((flag) => {
+      if (flag.captured) return;
+
       if (
         checkFlagCollision(clientPlayerState.position, flag.position) &&
         !clientPlayerState.flag
       ) {
-        console.log("flag captured", flag, clientPlayerState);
-
         setClientPlayerState((prev) => ({
           ...prev,
           flag,
         }));
 
-        socket.emit("flag-captured", flag, clientPlayerState);
+        const updatedFlags = produce(flags, (draftFlags) => {
+          draftFlags.forEach((f) => {
+            if (f.teamId === flag.teamId) {
+              f.captured = true;
+            }
+          });
+        });
+
+        setFlags(updatedFlags);
+
+        socket.emit("flag-captured", updatedFlags, flag, clientPlayerState);
       }
     });
   }, [clientPlayerState, flags]);

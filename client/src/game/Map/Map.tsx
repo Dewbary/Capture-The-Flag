@@ -7,8 +7,8 @@ type MapProps = {
 const Map = ({ flags }: MapProps) => {
   return (
     <div className="relative w-full h-full">
-      <div className="w-full h-1/2 bg-red-200" />
-      <div className="w-full h-1/2 bg-blue-200" />
+      <div className="w-full h-[400px] bg-red-200" />
+      <div className="w-full h-[400px] bg-blue-200" />
 
       {flags.map((flag, index) => {
         if (!flag.position) return null;

@@ -13,4 +13,5 @@ export type Flag = {
   teamId: "blue" | "red";
   position: Position;
   color: string;
+  captured: boolean;
 };

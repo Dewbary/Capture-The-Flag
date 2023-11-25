@@ -42,6 +42,7 @@ const io = new Server(server, {
 });
 
 let players: Player[] = [];
+let flags: Flag[] = [];
 
 io.on("connection", (socket) => {
   socket.on("join-game", (player: Player) => {
@@ -63,7 +64,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("player-moved", player);
   });
 
-  socket.on("flag-captured", (flag: Flag, player: Player) => {
+  socket.on("flag-captured", (flags: Flag[], flag: Flag, player: Player) => {
     console.log("flag captured", flag, player);
 
     players = players.map((p) => {
@@ -73,7 +74,7 @@ io.on("connection", (socket) => {
       return p;
     });
 
-    socket.broadcast.emit("flag-captured", players);
+    socket.broadcast.emit("flag-captured", players, flags);
   });
 });
 
