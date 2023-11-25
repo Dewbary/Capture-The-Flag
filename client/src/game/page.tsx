@@ -66,9 +66,14 @@ const Game = () => {
     [joinedGame]
   );
 
-  const handleJoinGameSuccess = (players: PlayerInfo[], flags: Flag[]) => {
+  const handleJoinGameSuccess = (
+    players: PlayerInfo[],
+    flags: Flag[],
+    score: Score
+  ) => {
     setPlayersList(players);
     setFlags(flags);
+    setScore(score);
   };
 
   const handleFlagCaptured = (players: PlayerInfo[], updatedflags: Flag[]) => {
