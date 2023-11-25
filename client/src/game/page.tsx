@@ -157,7 +157,8 @@ const Game = () => {
 
       if (
         checkFlagCollision(clientPlayerState.position, flag.position) &&
-        !clientPlayerState.flag
+        !clientPlayerState.flag &&
+        flag.teamId !== clientPlayerState.team
       ) {
         setClientPlayerState((prev) => ({
           ...prev,
