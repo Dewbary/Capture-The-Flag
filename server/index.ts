@@ -19,6 +19,7 @@ type Flag = {
   teamId: "blue" | "red";
   position: Position;
   color: string;
+  captured: boolean;
 };
 
 const app = express();
@@ -56,8 +57,20 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("user disconnected");
+    players.forEach((p) => {
+      if (p.id === socket.id) {
+        if (p.flag) {
+          flags = flags.map((f) => {
+            if (f.teamId === p.flag?.teamId) {
+              f.captured = false;
+            }
+            return f;
+          });
+        }
+      }
+    });
     players = players.filter((p) => p.id !== socket.id);
-    socket.broadcast.emit("leave-game", players);
+    socket.broadcast.emit("leave-game", players, flags);
   });
 
   socket.on("player-moved", (player: Player) => {
