@@ -1,10 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
 import { Player } from "./Player";
-import { PlayerInfo } from "../types";
+import { Flag, PlayerInfo } from "../types";
+import JoinGame from "./JoinGame";
+import PlayerList from "./PlayerList";
+import Map from "./Map";
+import { checkFlagCollision } from "./gameUtils";
+import { produce } from "immer";
 
 const socket = io(
-  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
+  // Prod
+  // "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
+
+  // Dev
+  "http://localhost:3001"
 );
 const moveSpeed = 50;
 
@@ -15,11 +24,22 @@ const Game = () => {
   });
   const [playersList, setPlayersList] = useState<PlayerInfo[]>([]);
   const [joinedGame, setJoinedGame] = useState(false);
+  const [flags, setFlags] = useState<Flag[]>([
+    {
+      teamId: "red",
+      position: { x: 800, y: 50 },
+      color: "#eb4034",
+    },
+    {
+      teamId: "blue",
+      position: { x: 800, y: 750 },
+      color: "#3489eb",
+    },
+  ]);
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
       if (!joinedGame) return;
-
       switch (event.key) {
         case "ArrowUp":
           setClientPlayerState((prev) => ({
@@ -56,6 +76,19 @@ const Game = () => {
         ...playersList.filter((p) => p.id !== player.id),
         player,
       ];
+
+      if (player.flag) {
+        const updatedFlags = produce(flags, (draftFlags) => {
+          draftFlags.forEach((flag) => {
+            if (!player.flag) return;
+            if (flag.teamId === player.flag.teamId) {
+              flag.position = player.position;
+            }
+          });
+        });
+        setFlags(updatedFlags);
+      }
+
       setPlayersList(updatedPlayersList);
     };
 
@@ -63,21 +96,55 @@ const Game = () => {
       setPlayersList(players);
     };
 
+    const handleFlagCaptured = (players: PlayerInfo[]) => {
+      setPlayersList(players);
+    };
+
     window.addEventListener("keydown", handleKeyPress);
     socket.on("player-moved", handlePlayerMoved);
     socket.on("join-game", handleJoinGameSuccess);
+    socket.on("flag-captured", handleFlagCaptured);
 
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
       socket.off("player-moved", handlePlayerMoved);
       socket.off("join-game", handleJoinGameSuccess);
     };
-  }, [handleKeyPress, playersList]);
+  }, [handleKeyPress, playersList, flags]);
 
   useEffect(() => {
     if (!joinedGame) return;
+    if (clientPlayerState.flag) {
+      const updatedFlags = produce(flags, (draftFlags) => {
+        draftFlags.forEach((flag) => {
+          if (!clientPlayerState.flag) return;
+          if (flag.teamId === clientPlayerState.flag.teamId) {
+            flag.position = clientPlayerState.position;
+          }
+        });
+      });
+      setFlags(updatedFlags);
+    }
     socket.emit("player-moved", clientPlayerState);
-  }, [clientPlayerState, joinedGame]);
+  }, [clientPlayerState, joinedGame, flags]);
+
+  useEffect(() => {
+    flags.forEach((flag) => {
+      if (
+        checkFlagCollision(clientPlayerState.position, flag.position) &&
+        !clientPlayerState.flag
+      ) {
+        console.log("flag captured", flag, clientPlayerState);
+
+        setClientPlayerState((prev) => ({
+          ...prev,
+          flag,
+        }));
+
+        socket.emit("flag-captured", flag, clientPlayerState);
+      }
+    });
+  }, [clientPlayerState, flags]);
 
   const handleJoinGame = () => {
     setJoinedGame(true);
@@ -86,28 +153,17 @@ const Game = () => {
   };
 
   return (
-    <div className="h-screen w-full">
-      <button
-        className="p-4 rounded border-2 border-black absolute top-[50%] left-[50%] text-black"
-        onClick={handleJoinGame}
-      >
-        Join Game
-      </button>
-
+    <div className="h-full w-full">
+      <Map flags={flags} />
+      <JoinGame handleJoinGame={handleJoinGame} isVisible={!joinedGame} />
       {joinedGame && (
         <>
-          <div className="absolute top-4 left-4">
-            {playersList &&
-              playersList.map((player) => {
-                return (
-                  <div key={player.id} className="">
-                    ID: {player.id}
-                  </div>
-                );
-              })}
-          </div>
+          <PlayerList playersList={playersList} />
 
+          {/* Client Player */}
           <Player playerInfo={clientPlayerState} />
+
+          {/* Other Players */}
           {playersList &&
             playersList.map((player, _index) => {
               if (player.id === socket.id) return null;

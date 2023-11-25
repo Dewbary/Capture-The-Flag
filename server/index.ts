@@ -12,6 +12,13 @@ type Position = {
 type Player = {
   id: string;
   position: Position;
+  flag?: Flag;
+};
+
+type Flag = {
+  teamId: "blue" | "red";
+  position: Position;
+  color: string;
 };
 
 const app = express();
@@ -54,6 +61,19 @@ io.on("connection", (socket) => {
       return p;
     });
     socket.broadcast.emit("player-moved", player);
+  });
+
+  socket.on("flag-captured", (flag: Flag, player: Player) => {
+    console.log("flag captured", flag, player);
+
+    players = players.map((p) => {
+      if (p.id === player.id) {
+        p = { ...p, flag };
+      }
+      return p;
+    });
+
+    socket.broadcast.emit("flag-captured", players);
   });
 });
 
