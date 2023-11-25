@@ -6,6 +6,7 @@ export type Position = {
 export type PlayerInfo = {
   id: string;
   position: Position;
+  team: "blue" | "red";
   flag?: Flag;
 };
 
@@ -14,4 +15,9 @@ export type Flag = {
   position: Position;
   color: string;
   captured: boolean;
+};
+
+export type Score = {
+  red: number;
+  blue: number;
 };

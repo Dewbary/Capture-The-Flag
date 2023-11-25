@@ -1,4 +1,4 @@
-import { Position } from "../types";
+import { PlayerInfo, Position } from "../types";
 
 export const checkFlagCollision = (
   playerPosition: Position,
@@ -24,4 +24,22 @@ export const checkFlagCollision = (
   // playerHitbox.y + playerHitbox.size >= flagHitbox.y
 
   return playerHitbox.x == flagHitbox.x && playerHitbox.y == flagHitbox.y;
+};
+
+export const checkFlagCaptured = (player: PlayerInfo): boolean => {
+  if (
+    player.team === "blue" &&
+    player.flag?.teamId === "red" &&
+    player.position.y > 400
+  )
+    return true;
+
+  if (
+    player.team === "red" &&
+    player.flag?.teamId === "blue" &&
+    player.position.y < 400
+  ) {
+    return true;
+  }
+  return false;
 };

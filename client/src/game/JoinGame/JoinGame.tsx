@@ -1,5 +1,5 @@
 type JoinGameProps = {
-  handleJoinGame: () => void;
+  handleJoinGame: (teamId: "red" | "blue") => void;
   isVisible: boolean;
 };
 
@@ -7,12 +7,20 @@ const JoinGame = ({ handleJoinGame, isVisible }: JoinGameProps) => {
   if (!isVisible) return null;
 
   return (
-    <button
-      className="p-4 rounded border-2 border-black absolute top-[50%] left-[50%] text-black"
-      onClick={handleJoinGame}
-    >
-      Join Game
-    </button>
+    <div className="absolute top-[50%] left-[50%] flex justify-center content-center">
+      <button
+        className="p-4 rounded border-2 border-black bg-red-600 text-black"
+        onClick={() => handleJoinGame("red")}
+      >
+        Join Red Team
+      </button>
+      <button
+        className="p-4 rounded border-2 border-black bg-blue-600 text-black"
+        onClick={() => handleJoinGame("blue")}
+      >
+        Join Blue Team
+      </button>
+    </div>
   );
 };
 

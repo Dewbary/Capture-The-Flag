@@ -12,6 +12,7 @@ type Position = {
 type Player = {
   id: string;
   position: Position;
+  team: "blue" | "red";
   flag?: Flag;
 };
 
@@ -20,6 +21,11 @@ type Flag = {
   position: Position;
   color: string;
   captured: boolean;
+};
+
+type Score = {
+  red: number;
+  blue: number;
 };
 
 const app = express();
@@ -43,7 +49,24 @@ const io = new Server(server, {
 });
 
 let players: Player[] = [];
-let flags: Flag[] = [];
+let flags: Flag[] = [
+  {
+    teamId: "red",
+    position: { x: 800, y: 50 },
+    color: "#eb4034",
+    captured: false,
+  },
+  {
+    teamId: "blue",
+    position: { x: 800, y: 750 },
+    color: "#3489eb",
+    captured: false,
+  },
+];
+let score: Score = {
+  red: 0,
+  blue: 0,
+};
 
 io.on("connection", (socket) => {
   socket.on("join-game", (player: Player) => {
@@ -94,6 +117,27 @@ io.on("connection", (socket) => {
     });
 
     socket.broadcast.emit("flag-captured", players, flags);
+  });
+
+  socket.on("scored", (team: "blue" | "red") => {
+    console.log("scored", team);
+    score[team] += 1;
+
+    players = players.map((p) => {
+      if (p.team === team) {
+        p.flag = undefined;
+      }
+      return p;
+    });
+
+    flags = flags.map((f) => {
+      if (f.teamId === team) {
+        f.captured = false;
+        f.position = { x: 800, y: team === "red" ? 50 : 750 };
+      }
+      return f;
+    });
+    socket.broadcast.emit("scored", score, players, flags);
   });
 });
 
