@@ -10,10 +10,13 @@ import { produce } from "immer";
 
 const socket = io(
   // Prod
-  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
+  // "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com"
 
   // Dev env
-  // "http://localhost:3001"
+  "http://localhost:3001",
+  {
+    autoConnect: false,
+  }
 );
 const moveSpeed = 50;
 
@@ -72,6 +75,26 @@ const Game = () => {
     [joinedGame]
   );
 
+  const handleJoinGameSuccess = (players: PlayerInfo[]) => {
+    setPlayersList(players);
+  };
+
+  const handleFlagCaptured = (players: PlayerInfo[], flags: Flag[]) => {
+    setFlags(flags);
+    setPlayersList(players);
+  };
+
+  const handleLeaveGame = (players: PlayerInfo[]) => {
+    setPlayersList(players);
+  };
+
+  useEffect(() => {
+    socket.connect();
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     const handlePlayerMoved = (player: PlayerInfo) => {
       const updatedPlayersList = [
@@ -94,19 +117,6 @@ const Game = () => {
       setPlayersList(updatedPlayersList);
     };
 
-    const handleJoinGameSuccess = (players: PlayerInfo[]) => {
-      setPlayersList(players);
-    };
-
-    const handleFlagCaptured = (players: PlayerInfo[], flags: Flag[]) => {
-      setFlags(flags);
-      setPlayersList(players);
-    };
-
-    const handleLeaveGame = (players: PlayerInfo[]) => {
-      setPlayersList(players);
-    };
-
     window.addEventListener("keydown", handleKeyPress);
     socket.on("player-moved", handlePlayerMoved);
     socket.on("join-game", handleJoinGameSuccess);
@@ -117,9 +127,10 @@ const Game = () => {
       window.removeEventListener("keydown", handleKeyPress);
       socket.off("player-moved", handlePlayerMoved);
       socket.off("join-game", handleJoinGameSuccess);
-      socket.emit("leave-game", clientPlayerState);
+      socket.off("flag-captured", handleFlagCaptured);
+      socket.off("leave-game", handleLeaveGame);
     };
-  }, [handleKeyPress, playersList, flags, clientPlayerState]);
+  }, [clientPlayerState, flags, handleKeyPress, playersList]);
 
   useEffect(() => {
     if (!joinedGame) return;
