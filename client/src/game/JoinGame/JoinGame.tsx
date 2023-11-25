@@ -1,5 +1,3 @@
-import * as React from "react";
-
 type JoinGameProps = {
   handleJoinGame: () => void;
   isVisible: boolean;
