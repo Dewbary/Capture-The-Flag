@@ -14,7 +14,7 @@
 
 - deployed on Heroku
 - build the client, copy the contents of the `dist` directory over to the `public` directory of the server, then run:
-  `git push origin heroku`
+  `git push heroku main`
 
 ## TODO
 
