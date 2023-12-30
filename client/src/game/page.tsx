@@ -1,99 +1,125 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
 import { Player } from "./Player";
-import { Flag, PlayerInfo, Score } from "../types";
+import { Flag, PlayerInfo, Position, Score } from "../types";
 import JoinGame from "./JoinGame";
 import PlayerList from "./PlayerList";
 import Map from "./Map";
-import { checkFlagCaptured, checkFlagCollision } from "./gameUtils";
-import { produce } from "immer";
 import ScoreDisplay from "./ScoreDisplay";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  clientPlayerJoined,
+  initializeGame,
+  playerJoined,
+  playerMoved,
+  flagCaptured,
+  flagMoved,
+  teamScored,
+  updateFlags,
+  updatePlayer
+} from "./gameReducer/gameReducer";
+import {
+  selectClientPlayerId,
+  selectScore,
+  isJoinedGame,
+  selectFlags,
+  selectPlayers,
+} from "./gameReducer/gameReducerSelectors";
 
 const socket = io(
   // Prod
-  "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com",
+  // "https://brendan-capture-the-flag-302c93083f6a.herokuapp.com",
 
   // Dev env
-  // "http://localhost:3001",
+  "http://localhost:3001",
   {
     autoConnect: false,
   }
 );
-const moveSpeed = 50;
 
 const Game = () => {
-  const [clientPlayerState, setClientPlayerState] = useState<PlayerInfo>({
-    id: socket.id,
-    position: { x: 100, y: 100 },
-    team: "blue",
-  });
-
-  const [playersList, setPlayersList] = useState<PlayerInfo[]>([]);
-  const [joinedGame, setJoinedGame] = useState(false);
-  const [flags, setFlags] = useState<Flag[]>([]);
-  const [score, setScore] = useState<Score>({ blue: 0, red: 0 });
+  const score = useSelector(selectScore);
+  const clientPlayerId = useSelector(selectClientPlayerId);
+  const joinedGame = useSelector(isJoinedGame);
+  const flags = useSelector(selectFlags);
+  const players = useSelector(selectPlayers);
+  const dispatch = useDispatch();
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
       if (!joinedGame) return;
       switch (event.key) {
         case "ArrowUp":
-          setClientPlayerState((prev) => ({
-            ...prev,
-            position: { ...prev.position, y: prev.position.y - moveSpeed },
-          }));
+          socket.emit("player-moved", clientPlayerId, "up");
           break;
         case "ArrowDown":
-          setClientPlayerState((prev) => ({
-            ...prev,
-            position: { ...prev.position, y: prev.position.y + moveSpeed },
-          }));
+          socket.emit("player-moved", clientPlayerId, "down");
           break;
         case "ArrowLeft":
-          setClientPlayerState((prev) => ({
-            ...prev,
-            position: { ...prev.position, x: prev.position.x - moveSpeed },
-          }));
+          socket.emit("player-moved", clientPlayerId, "left");
           break;
         case "ArrowRight":
-          setClientPlayerState((prev) => ({
-            ...prev,
-            position: { ...prev.position, x: prev.position.x + moveSpeed },
-          }));
+          socket.emit("player-moved", clientPlayerId, "right");
           break;
       }
     },
     [joinedGame]
   );
 
+  const handleJoinGame = (teamId: "red" | "blue") => {
+    socket.emit("join-game", socket.id, teamId);
+    dispatch(clientPlayerJoined({ playerId: socket.id }));
+  };
+
   const handleJoinGameSuccess = (
     players: PlayerInfo[],
     flags: Flag[],
     score: Score
   ) => {
-    setPlayersList(players);
-    setFlags(flags);
-    setScore(score);
+    dispatch(initializeGame({ players, flags, score }));
   };
 
-  const handleFlagCaptured = (players: PlayerInfo[], updatedflags: Flag[]) => {
-    setFlags(updatedflags);
-    setPlayersList(players);
+  const handlePlayerJoined = (player: PlayerInfo) => {
+    dispatch(playerJoined({ player }));
   };
 
-  const handleLeaveGame = (players: PlayerInfo[]) => {
-    setPlayersList(players);
+  const handlePlayerMoved = (playerId: string, position: Position) => {
+    dispatch(playerMoved({ playerId, position }));
   };
 
-  const handleScored = (
-    updatedScore: Score,
-    updatedPlayers: PlayerInfo[],
-    updatedFlags: Flag[]
-  ) => {
-    setScore(updatedScore);
-    setPlayersList(updatedPlayers);
-    setFlags(updatedFlags);
-  };
+  const handleFlagCaptured = (player: PlayerInfo, flag: Flag) => {
+    dispatch(flagCaptured({ player, flag }))
+  }
+
+  const handleFlagMoved = (flag: Flag) => {
+    dispatch(flagMoved({ flag }))
+  }
+
+  const handlePlayerScored = (teamId: "blue" | "red", player: PlayerInfo, flags: Flag[]) => {
+    dispatch(teamScored({teamId}))
+    dispatch(updateFlags({flags}))
+    dispatch(updatePlayer({player}))
+  }
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    socket.on("join-game-success", handleJoinGameSuccess);
+    socket.on("player-joined", handlePlayerJoined);
+    socket.on("player-moved", handlePlayerMoved);
+    socket.on("flag-captured", handleFlagCaptured)
+    socket.on("flag-moved", handleFlagMoved)
+    socket.on("scored", handlePlayerScored)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+      socket.off("player-joined");
+      socket.off("player-moved");
+      socket.off("join-game-success")
+      socket.off("flag-captured")
+      socket.off("flag-moved")
+      socket.off("scored")
+    };
+  }, [handleKeyPress]);
 
   useEffect(() => {
     socket.connect();
@@ -102,150 +128,21 @@ const Game = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const handlePlayerMoved = (player: PlayerInfo) => {
-      const updatedPlayersList = [
-        ...playersList.filter((p) => p.id !== player.id),
-        player,
-      ];
-
-      if (player.flag) {
-        const updatedFlags = produce(flags, (draftFlags) => {
-          draftFlags.forEach((flag) => {
-            if (!player.flag) return;
-            if (flag.teamId === player.flag.teamId) {
-              flag.position = player.position;
-            }
-          });
-        });
-        setFlags(updatedFlags);
-      }
-
-      setPlayersList(updatedPlayersList);
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    socket.on("player-moved", handlePlayerMoved);
-    socket.on("join-game", handleJoinGameSuccess);
-    socket.on("flag-captured", handleFlagCaptured);
-    socket.on("scored", handleScored);
-    socket.on("leave-game", handleLeaveGame);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-      socket.off("player-moved", handlePlayerMoved);
-      socket.off("join-game", handleJoinGameSuccess);
-      socket.off("flag-captured", handleFlagCaptured);
-      socket.off("leave-game", handleLeaveGame);
-    };
-  }, [clientPlayerState, flags, handleKeyPress, playersList]);
-
-  useEffect(() => {
-    if (!joinedGame) return;
-    if (clientPlayerState.flag) {
-      const updatedFlags = produce(flags, (draftFlags) => {
-        draftFlags.forEach((flag) => {
-          if (!clientPlayerState.flag) return;
-          if (flag.teamId === clientPlayerState.flag.teamId) {
-            flag.position = clientPlayerState.position;
-          }
-        });
-      });
-      setFlags(updatedFlags);
-    }
-    socket.emit("player-moved", clientPlayerState);
-  }, [clientPlayerState, joinedGame, flags]);
-
-  useEffect(() => {
-    flags.forEach((flag) => {
-      if (flag.captured) return;
-
-      if (
-        checkFlagCollision(clientPlayerState.position, flag.position) &&
-        !clientPlayerState.flag &&
-        flag.teamId !== clientPlayerState.team
-      ) {
-        setClientPlayerState((prev) => ({
-          ...prev,
-          flag,
-        }));
-
-        const updatedFlags = produce(flags, (draftFlags) => {
-          draftFlags.forEach((f) => {
-            if (f.teamId === flag.teamId) {
-              f.captured = true;
-            }
-          });
-        });
-
-        setFlags(updatedFlags);
-        socket.emit("flag-captured", updatedFlags, flag, clientPlayerState);
-      }
-    });
-
-    if (checkFlagCaptured(clientPlayerState)) {
-      if (!clientPlayerState.flag) return;
-      const teamId = clientPlayerState.flag?.teamId;
-
-      setScore((prev) => {
-        return {
-          ...prev,
-          [clientPlayerState.team]: prev[clientPlayerState.team] + 1,
-        };
-      });
-
-      setFlags((prev) => {
-        return prev.map((flag) => {
-          if (flag.teamId === teamId) {
-            return {
-              ...flag,
-              captured: false,
-              position: { x: 800, y: teamId === "red" ? 50 : 750 },
-            };
-          }
-          return flag;
-        });
-      });
-
-      setClientPlayerState((prev) => {
-        return {
-          ...prev,
-          flag: undefined,
-        };
-      });
-
-      socket.emit("scored", clientPlayerState.team);
-    }
-  }, [clientPlayerState, flags]);
-
-  const handleJoinGame = (teamId: "red" | "blue") => {
-    setJoinedGame(true);
-    setClientPlayerState((prev) => ({ ...prev, id: socket.id, team: teamId }));
-    socket.emit("join-game", {
-      ...clientPlayerState,
-      id: socket.id,
-      team: teamId,
-    });
-  };
-
   return (
     <div className="h-full w-full">
       <Map flags={flags} />
-      <JoinGame handleJoinGame={handleJoinGame} isVisible={!joinedGame} />
-      {joinedGame && (
+
+      {!joinedGame ? (
+        <JoinGame handleJoinGame={handleJoinGame} />
+      ) : (
         <>
-          <PlayerList playersList={playersList} />
+          <PlayerList playersList={players} />
           <ScoreDisplay score={score} />
 
-          {/* Client Player */}
-          <Player playerInfo={clientPlayerState} />
-
-          {/* Other Players */}
-          {playersList &&
-            playersList.map((player, _index) => {
-              if (player.id === socket.id) return null;
-              return <Player key={player.id + _index} playerInfo={player} />;
-            })}
+          {players &&
+            players.map((player, _index) => (
+              <Player key={player.id + _index} playerInfo={player} />
+            ))}
         </>
       )}
     </div>

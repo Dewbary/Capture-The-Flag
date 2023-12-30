@@ -21,3 +21,17 @@ export type Score = {
   red: number;
   blue: number;
 };
+
+export type GameState = {
+  clientPlayerId: string;
+  players: PlayerInfo[];
+  flags: Flag[];
+  score: Score;
+};
+
+export type Collision = {
+  playerId: string;
+  position: Position;
+  type: "player" | "flag";
+  entity: PlayerInfo | Flag;
+} | null;

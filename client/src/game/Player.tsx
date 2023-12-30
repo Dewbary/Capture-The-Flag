@@ -10,7 +10,7 @@ export const Player = ({ playerInfo }: Props) => {
   return (
     <>
       <div
-        className={`absolute w-4 h-4 bg-white rounded-full`}
+        className={`absolute w-4 h-4 bg-black rounded-full`}
         style={{
           top: position.y,
           left: position.x,

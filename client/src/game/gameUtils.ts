@@ -1,30 +1,41 @@
-import { PlayerInfo, Position } from "../types";
+import { Collision, PlayerInfo, Position } from "../types";
 
-export const checkFlagCollision = (
-  playerPosition: Position,
-  flagPosition: Position
-): boolean => {
-  if (!playerPosition || !flagPosition) return false;
+// export const checkCollisions = (playerId: string, playerPosition: Position): Collision[] => {
+//   const flagCollision = checkFlagCollision(playerPosition);
+//   const playerCollisions = checkPlayerCollision(playerPosition);
 
-  const playerHitbox = {
-    x: playerPosition.x,
-    y: playerPosition.y,
-    size: 50,
-  };
+//   return [flagCollision, ...playerCollisions];
+// }
 
-  const flagHitbox = {
-    x: flagPosition.x,
-    y: flagPosition.y,
-    size: 15,
-  };
+// export const checkFlagCollision = (
+//   playerPosition: Position,
+//   flagPosition: Position
+// ): Collision => {
+//   if (!playerPosition || !flagPosition) return false;
 
-  // playerHitbox.x <= flagHitbox.x + flagHitbox.size &&
-  // playerHitbox.x + playerHitbox.size >= flagHitbox.x &&
-  // playerHitbox.y <= flagHitbox.y + flagHitbox.size &&
-  // playerHitbox.y + playerHitbox.size >= flagHitbox.y
+//   const playerHitbox = {
+//     x: playerPosition.x,
+//     y: playerPosition.y,
+//     size: 50,
+//   };
 
-  return playerHitbox.x == flagHitbox.x && playerHitbox.y == flagHitbox.y;
-};
+//   const flagHitbox = {
+//     x: flagPosition.x,
+//     y: flagPosition.y,
+//     size: 15,
+//   };
+
+//   // playerHitbox.x <= flagHitbox.x + flagHitbox.size &&
+//   // playerHitbox.x + playerHitbox.size >= flagHitbox.x &&
+//   // playerHitbox.y <= flagHitbox.y + flagHitbox.size &&
+//   // playerHitbox.y + playerHitbox.size >= flagHitbox.y
+
+//   return playerHitbox.x == flagHitbox.x && playerHitbox.y == flagHitbox.y;
+// };
+
+// export const checkPlayerCollision = (): Collision[] => {
+//   return [];
+// }
 
 export const checkFlagCaptured = (player: PlayerInfo): boolean => {
   if (

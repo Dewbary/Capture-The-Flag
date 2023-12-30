@@ -28,6 +28,16 @@ type Score = {
   blue: number;
 };
 
+export type Collision = {
+  playerId: string;
+  position: Position;
+} | null;
+
+export type FlagCollision = {
+  entity: Flag;
+  type: "flag"
+} | null & Collision;
+
 const app = express();
 const server = http.createServer(app);
 
@@ -69,13 +79,19 @@ let score: Score = {
 };
 
 io.on("connection", (socket) => {
-  socket.on("join-game", (player: Player) => {
-    console.log("player joined: ", player);
+  socket.on("join-game", (playerId: string, teamId: "red" | "blue") => {
+    console.log("player joined: ", playerId, teamId);
 
-    if (!players.find((p) => p.id === player.id)) {
-      players.push(player);
+    if (!players.find((p) => p.id === playerId)) {
+      const newPlayer: Player = {
+        id: playerId,
+        position: { x: 0, y: 0 },
+        team: teamId,
+      };
+      players.push(newPlayer);
+      io.emit("player-joined", newPlayer);
     }
-    io.emit("join-game", players, flags, score);
+    socket.emit("join-game-success", players, flags, score);
   });
 
   socket.on("disconnect", () => {
@@ -96,15 +112,51 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("leave-game", players, flags);
   });
 
-  socket.on("player-moved", (player: Player) => {
-    players = players.map((p) => {
-      if (p.id === player.id) {
-        return player;
-      }
-      return p;
-    });
-    socket.broadcast.emit("player-moved", player);
-  });
+  socket.on(
+    "player-moved",
+    (playerId: string, direction: "up" | "down" | "left" | "right") => {
+      players = players.map((p) => {
+        if (p.id === playerId) {
+          if (direction === "up") {
+            p.position.y -= 50;
+          }
+          if (direction === "down") {
+            p.position.y += 50;
+          }
+          if (direction === "left") {
+            p.position.x -= 50;
+          }
+          if (direction === "right") {
+            p.position.x += 50;
+          }
+          io.emit("player-moved", playerId, p.position);
+
+          if (p.flag) {
+            p.flag.position = p.position;
+            io.emit("flag-moved", p.flag)
+
+            // check if the flag has been successfully brought back to base
+            if (flagInBase(p.flag)) {
+              score[p.team] += 1;
+              p.flag = undefined;
+              flags = flags.map((f) => {
+                if (f.teamId !== p.team) {
+                  f.captured = false;
+                  f.position = { x: 800, y: f.teamId === "red" ? 50 : 750 };
+                }
+                return f;
+              });
+
+              io.emit("scored", p.team, p, flags);
+            }
+          }
+
+          const collisions = checkCollisions(p)
+        }
+        return p;
+      });
+    }
+  );
 
   socket.on("flag-captured", (flags: Flag[], flag: Flag, player: Player) => {
     console.log("flag captured", flag, player);
@@ -140,6 +192,82 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("scored", score, players, flags);
   });
 });
+
+
+const flagInBase = (flag: Flag) => {
+  if (flag.teamId === "blue") {
+    return flag.position.y <= 400;
+  }
+
+  if (flag.teamId === "red") {
+    return flag.position.y >= 400;
+  }
+}
+
+const checkCollisions = (player: Player) => {
+  const flagCollisions = checkFlagCollisions(player);
+
+  flagCollisions.forEach((collision) => {
+    if (!collision) return;
+
+    if (collision.entity.captured) return;
+    if (collision.entity.teamId === player.team) return;
+
+    collision.entity.captured = true;
+    players = players.map((p) => {
+      if (p.id === player.id) {
+        p.flag = collision.entity;
+      }
+      return p;
+    })
+
+    io.emit("flag-captured", players.find(p => p.id === player.id), collision.entity);
+  })
+
+  const playerCollisions = checkPlayerCollisions(player);
+
+
+  // return [...flagCollisions, ...playerCollisions];
+}
+
+const checkFlagCollisions = (player: Player): FlagCollision[] => {
+  return flags.map((flag) => {
+    if (!player.position || !flag.position) return null;
+
+    if (player.flag === flag) return null;
+
+    const playerHitbox = {
+      x: player.position.x,
+      y: player.position.y,
+      size: 50,
+    };
+
+    const flagHitbox = {
+      x: flag.position.x,
+      y: flag.position.y,
+      size: 15,
+    };
+
+    // playerHitbox.x <= flagHitbox.x + flagHitbox.size &&
+    // playerHitbox.x + playerHitbox.size >= flagHitbox.x &&
+    // playerHitbox.y <= flagHitbox.y + flagHitbox.size &&
+    // playerHitbox.y + playerHitbox.size >= flagHitbox.y
+
+    if (playerHitbox.x == flagHitbox.x && playerHitbox.y == flagHitbox.y) {
+      return {
+        playerId: player.id,
+        position: player.position,
+        type: "flag",
+        entity: flag,
+      };
+    }
+    return null;
+  });
+}
+
+const checkPlayerCollisions = (player: Player): Collision[] => {
+  return [];
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

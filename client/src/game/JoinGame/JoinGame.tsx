@@ -1,11 +1,8 @@
 type JoinGameProps = {
   handleJoinGame: (teamId: "red" | "blue") => void;
-  isVisible: boolean;
 };
 
-const JoinGame = ({ handleJoinGame, isVisible }: JoinGameProps) => {
-  if (!isVisible) return null;
-
+const JoinGame = ({ handleJoinGame }: JoinGameProps) => {
   return (
     <div className="absolute top-[50%] left-[50%] flex justify-center content-center">
       <button
