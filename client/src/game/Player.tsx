@@ -10,7 +10,9 @@ export const Player = ({ playerInfo }: Props) => {
   return (
     <>
       <div
-        className={`absolute w-4 h-4 bg-black rounded-full`}
+        className={`absolute w-4 h-4 ${
+          playerInfo.team === "red" ? "bg-red-900" : "bg-blue-900"
+        } rounded-full`}
         style={{
           top: position.y,
           left: position.x,

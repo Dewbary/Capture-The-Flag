@@ -16,7 +16,7 @@ import {
   flagMoved,
   teamScored,
   updateFlags,
-  updatePlayer
+  updatePlayer,
 } from "./gameReducer/gameReducer";
 import {
   selectClientPlayerId,
@@ -88,36 +88,46 @@ const Game = () => {
   };
 
   const handleFlagCaptured = (player: PlayerInfo, flag: Flag) => {
-    dispatch(flagCaptured({ player, flag }))
-  }
+    dispatch(flagCaptured({ player, flag }));
+  };
 
   const handleFlagMoved = (flag: Flag) => {
-    dispatch(flagMoved({ flag }))
-  }
+    dispatch(flagMoved({ flag }));
+  };
 
-  const handlePlayerScored = (teamId: "blue" | "red", player: PlayerInfo, flags: Flag[]) => {
-    dispatch(teamScored({teamId}))
-    dispatch(updateFlags({flags}))
-    dispatch(updatePlayer({player}))
-  }
+  const handlePlayerScored = (
+    teamId: "blue" | "red",
+    player: PlayerInfo,
+    flags: Flag[]
+  ) => {
+    dispatch(teamScored({ teamId }));
+    dispatch(updateFlags({ flags }));
+    dispatch(updatePlayer({ player }));
+  };
+
+  const handlePlayerCaptured = (player: PlayerInfo) => {
+    dispatch(updatePlayer({ player }));
+  };
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
     socket.on("join-game-success", handleJoinGameSuccess);
     socket.on("player-joined", handlePlayerJoined);
     socket.on("player-moved", handlePlayerMoved);
-    socket.on("flag-captured", handleFlagCaptured)
-    socket.on("flag-moved", handleFlagMoved)
-    socket.on("scored", handlePlayerScored)
+    socket.on("flag-captured", handleFlagCaptured);
+    socket.on("flag-moved", handleFlagMoved);
+    socket.on("scored", handlePlayerScored);
+    socket.on("player-captured", handlePlayerCaptured);
 
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
       socket.off("player-joined");
       socket.off("player-moved");
-      socket.off("join-game-success")
-      socket.off("flag-captured")
-      socket.off("flag-moved")
-      socket.off("scored")
+      socket.off("join-game-success");
+      socket.off("flag-captured");
+      socket.off("flag-moved");
+      socket.off("scored");
+      socket.off("player-captured");
     };
   }, [handleKeyPress]);
 

@@ -14,6 +14,7 @@ type Player = {
   position: Position;
   team: "blue" | "red";
   flag?: Flag;
+  captured: boolean;
 };
 
 type Flag = {
@@ -33,10 +34,19 @@ export type Collision = {
   position: Position;
 } | null;
 
-export type FlagCollision = {
-  entity: Flag;
-  type: "flag"
-} | null & Collision;
+export type FlagCollision =
+  | {
+      entity: Flag;
+      type: "flag";
+    }
+  | (null & Collision);
+
+export type PlayerCollision =
+  | ({
+      entity: Player;
+      type: "player";
+    } & Collision)
+  | null;
 
 const app = express();
 const server = http.createServer(app);
@@ -87,6 +97,7 @@ io.on("connection", (socket) => {
         id: playerId,
         position: { x: 0, y: 0 },
         team: teamId,
+        captured: false,
       };
       players.push(newPlayer);
       io.emit("player-joined", newPlayer);
@@ -133,7 +144,7 @@ io.on("connection", (socket) => {
 
           if (p.flag) {
             p.flag.position = p.position;
-            io.emit("flag-moved", p.flag)
+            io.emit("flag-moved", p.flag);
 
             // check if the flag has been successfully brought back to base
             if (flagInBase(p.flag)) {
@@ -151,7 +162,7 @@ io.on("connection", (socket) => {
             }
           }
 
-          const collisions = checkCollisions(p)
+          const collisions = checkCollisions(p);
         }
         return p;
       });
@@ -193,7 +204,6 @@ io.on("connection", (socket) => {
   });
 });
 
-
 const flagInBase = (flag: Flag) => {
   if (flag.teamId === "blue") {
     return flag.position.y <= 400;
@@ -202,7 +212,7 @@ const flagInBase = (flag: Flag) => {
   if (flag.teamId === "red") {
     return flag.position.y >= 400;
   }
-}
+};
 
 const checkCollisions = (player: Player) => {
   const flagCollisions = checkFlagCollisions(player);
@@ -219,16 +229,69 @@ const checkCollisions = (player: Player) => {
         p.flag = collision.entity;
       }
       return p;
-    })
+    });
 
-    io.emit("flag-captured", players.find(p => p.id === player.id), collision.entity);
-  })
+    io.emit(
+      "flag-captured",
+      players.find((p) => p.id === player.id),
+      collision.entity
+    );
+  });
 
   const playerCollisions = checkPlayerCollisions(player);
 
+  playerCollisions.forEach((collision) => {
+    if (!collision) return;
 
-  // return [...flagCollisions, ...playerCollisions];
-}
+    const playerCaptured = checkPlayerCaptured(player, collision.entity);
+
+    if (!playerCaptured) return;
+
+    players = players.map((p) => {
+      if (p.id === playerCaptured.id) {
+        p.captured = true;
+        p.position = { x: 0, y: 0 };
+
+        flags = flags.map((f) => {
+          if (f.teamId === p.flag?.teamId) {
+            f.captured = false;
+          }
+          return f;
+        });
+
+        p.flag = undefined;
+      }
+      return p;
+    });
+    io.emit("player-captured", {
+      ...playerCaptured,
+      position: { x: 0, y: 0 },
+      flag: undefined,
+    });
+  });
+};
+
+const checkPlayerCaptured = (p1: Player, p2: Player): Player | null => {
+  if (p1.team === p2.team) return null;
+
+  if (p2.team === "blue" && p2.position.y < 400) {
+    return p2;
+  }
+
+  if (p2.team === "red" && p2.position.y > 400) {
+    return p2;
+  }
+
+  if (p1.team === "blue" && p1.position.y < 400) {
+    return p1;
+  }
+
+  if (p1.team === "red" && p1.position.y > 400) {
+    return p1;
+  }
+
+  return null;
+};
 
 const checkFlagCollisions = (player: Player): FlagCollision[] => {
   return flags.map((flag) => {
@@ -263,11 +326,35 @@ const checkFlagCollisions = (player: Player): FlagCollision[] => {
     }
     return null;
   });
-}
+};
 
-const checkPlayerCollisions = (player: Player): Collision[] => {
-  return [];
-}
+const checkPlayerCollisions = (player: Player): PlayerCollision[] => {
+  return players.map((p) => {
+    if (p.id === player.id) return null;
+    const playerHitbox = {
+      x: player.position.x,
+      y: player.position.y,
+      size: 50,
+    };
+
+    const pHitbox = {
+      x: p.position.x,
+      y: p.position.y,
+      size: 50,
+    };
+
+    if (playerHitbox.x == pHitbox.x && playerHitbox.y == pHitbox.y) {
+      console.log("collision", player.id, p.id);
+      return {
+        playerId: player.id,
+        position: player.position,
+        type: "player",
+        entity: p,
+      };
+    }
+    return null;
+  });
+};
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

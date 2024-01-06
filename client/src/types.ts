@@ -8,6 +8,7 @@ export type PlayerInfo = {
   position: Position;
   team: "blue" | "red";
   flag?: Flag;
+  captured: boolean;
 };
 
 export type Flag = {

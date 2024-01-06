@@ -21,6 +21,7 @@
 - Improve State management (eliminate duplication)
   - Collision management
     - manage it on the server
+    - player collisions
 - Each team should have a prison area
   - When tagged in the opposing color, the opposing color should be transported to the prison area
 - Update spawn points for each team
