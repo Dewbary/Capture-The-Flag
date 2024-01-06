@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Flag, GameState, PlayerInfo, Position, Score } from "../../types";
 
-const initialState = (): GameState => ({
+const initialState: GameState = {
   clientPlayerId: "",
   players: [],
   flags: [],
@@ -9,11 +9,11 @@ const initialState = (): GameState => ({
     red: 0,
     blue: 0,
   },
-});
+};
 
 const { reducer, actions } = createSlice({
   name: "game",
-  initialState: initialState(),
+  initialState,
   reducers: {
     initializeGame: (
       state,
@@ -48,42 +48,45 @@ const { reducer, actions } = createSlice({
         player.position = position;
       }
     },
-    updatePlayer: (state, action: PayloadAction<{player: PlayerInfo}>) => {
+    updatePlayer: (state, action: PayloadAction<{ player: PlayerInfo }>) => {
       const { player } = action.payload;
       state.players = state.players.map((p) => {
         if (p.id === player.id) {
-          p = player
+          p = player;
         }
         return p;
-      })
+      });
     },
-    flagCaptured: (state, action: PayloadAction<{ player: PlayerInfo, flag: Flag }>) => {
+    flagCaptured: (
+      state,
+      action: PayloadAction<{ player: PlayerInfo; flag: Flag }>
+    ) => {
       const { player, flag } = action.payload;
 
       state.players = state.players.map((p) => {
         if (p.id === player.id) {
-          p = player
+          p = player;
         }
         return p;
-      })
+      });
 
       state.flags = state.flags.map((f) => {
         if (f.teamId === flag.teamId) {
-          f = flag
+          f = flag;
         }
         return f;
-      })
+      });
     },
     flagMoved: (state, action: PayloadAction<{ flag: Flag }>) => {
       const { flag } = action.payload;
       state.flags = state.flags.map((f) => {
         if (f.teamId === flag.teamId) {
-          f = flag
+          f = flag;
         }
         return f;
-      })
+      });
     },
-    updateFlags: (state, action: PayloadAction<{flags: Flag[]}>) => {
+    updateFlags: (state, action: PayloadAction<{ flags: Flag[] }>) => {
       const { flags } = action.payload;
       state.flags = flags;
     },

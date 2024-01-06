@@ -1,10 +1,16 @@
 import gameReducer from "./game/gameReducer";
-import { configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 
-export const store = configureStore({
-  reducer: {
-    game: gameReducer,
-  },
+const rootReducer = combineReducers({
+  game: gameReducer,
 });
 
-export type State = ReturnType<typeof store.getState>;
+export function setupStore(preloadedState?: Partial<State>) {
+  return configureStore({
+    reducer: rootReducer,
+    preloadedState,
+  });
+}
+
+export type AppStore = ReturnType<typeof setupStore>;
+export type State = ReturnType<typeof rootReducer>;
